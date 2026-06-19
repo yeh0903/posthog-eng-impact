@@ -388,3 +388,25 @@ def composite(sub, rev, dur, w=(0.6,0.3,0.1)):
   stub-deploy-first ✓(Phase 0), relative-scaling disclosure ✓(UI 0.1/6), fallback host ✓(0.2).
 - Revert adjudication (spec step 5) folded into durability as a light modifier; deferred as a
   YAGNI cut if time-short (reverts are sparse, ~60 repo-wide, 0.1 weight).
+
+## Plan review — incorporated corrections (verified findings, baked into code)
+
+The adversarial plan review (12 confirmed findings) corrected these; implementation honors them:
+
+1. **Per-PR feature serialization (contract):** `features.py` writes `data/candidate_pr_features.json`
+   (one row per candidate PR: `number, login, areas, reach, critical_boost, trivial, size_proxy,
+   heuristic_substance`) + `data/area_centrality.json`. `aggregate.py` joins LLM complexity by `number`.
+2. **classify_prep join:** load `prs_raw.json` into a `{int(number): record}` index; join candidate PR
+   numbers against it to get title/body/labels/files.
+3. **Gilbert guard (the big one):** per-PR `sᵢ = cw(complexity)·reach·critical_boost` with convex
+   `cw={1:0,2:1,3:3,4:6,5:10}`; substance counts only each engineer's **top-30** PRs. Guard test models
+   *non-trivial formulaic* (complexity 1–2) PRs, not trivial ones.
+4. **Review formula:** per reviewer per PR = `reach(pr)·depth_weight ÷ n_reviewers` (no scalar-split contradiction).
+5. **Candidate gate:** "never cut" guarantee is reach-conditioned; disclosed in panel. (No code change beyond union.)
+6. **`is_generated_file`:** anchored matching — exact basenames + path-segment checks (drop bare "snapshot" substring).
+7. **`classify_work_type`:** `fix` anchored `^fix\b|^hotfix\b|\bbugfix\b` so "debug"/"feat … bug" don't misclassify.
+8. **`winsorize`:** `round()` not `int()`; return as-is when cohort < 10.
+9. **`size_proxy`:** exact `max(1,min(5,round(log(1+lines,6))))`; used only as per-PR fallback within the classified set.
+10. **Census assert:** `fetch_prs.py` asserts deduped == search `total_count` (already matched 8,976; assert added).
+11. **`reviews_truncated`:** computed per PR (`len(reviews)==100`) and counted in `meta`.
+12. **Durability:** = distinct core areas (min-max); faulty-revert penalty **cut** (sparse/noisy); panel text matches.

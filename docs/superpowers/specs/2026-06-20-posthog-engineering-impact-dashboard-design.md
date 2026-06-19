@@ -87,9 +87,9 @@ Raw line/commit/PR counts are never the metric. An LLM reads what each contender
 
 | Dimension | Captures | Measured by |
 |---|---|---|
-| **Shipped substance** (primary) | The real weight of merged work — a critical ingestion fix ≫ a stacked one-line refactor | Per-PR `substance = complexity × reach × critical_boost`. **complexity** 1–5 from an LLM **reading the diff + title/body/paths** (finalists only; heuristic size proxy otherwise). **reach** = measured co-touch centrality of the PR's areas (distinct-author count, log-scaled), excluding generated/lock/CI/snapshot/docs files. **critical_boost** = ×1.5 on CODEOWNERS-critical paths. Trivial PRs ≈ 0. **Aggregated concavely** (below). |
-| **Review leverage** (force-multiplier) | Enabling *others'* work — substantive reviews | Reviews given on others' non-trivial PRs, weighted by depth (CHANGES_REQUESTED / COMMENTED > bare APPROVED) and by the **reach of the PR reviewed**. **A PR's review value is split across its (non-bot) reviewers** so a much-reviewed PR can't multiply credit. Bot reviewers (login denylist) and self-reviews excluded. |
-| **Durability & breadth** (light) | Breadth of ownership; work that sticks | **Primary:** count of distinct core areas the engineer meaningfully touched. **Modifier:** small, capped, **LLM-adjudicated penalty for *faulty* self-reverts only** (uncertain → zero). Sparse (~60 reverts repo-wide); never dominates. |
+| **Shipped substance** (primary) | The real weight of merged work — a critical ingestion fix ≫ a stacked one-line refactor | Per-PR `sᵢ = cw(complexity) × reach × critical_boost`, **convex** `cw={1:0,2:1,3:3,4:6,5:10}` (complexity-1 ≈ 0). **complexity** 1–5 from an LLM **reading the diff** (finalists' top-30 PRs; size-proxy only as a per-PR fallback). **reach** = measured co-touch centrality of the PR's areas (distinct-author count, log-scaled), excluding generated/lock/CI/snapshot files. **critical_boost** = ×1.5 on CODEOWNERS-critical paths. Counted over each engineer's **top-30 PRs**, aggregated concavely (below). |
+| **Review leverage** (force-multiplier) | Enabling *others'* work — substantive reviews | For each non-trivial PR, each non-bot non-author reviewer earns `reach(pr) × depth_weight ÷ n_reviewers` (depth: APPROVED 1.0, COMMENTED 1.3, CHANGES_REQUESTED 1.6 — strongest state per reviewer). Dividing by reviewer count stops a much-reviewed PR from multiplying credit. Bot reviewers (login denylist) and self-reviews excluded. |
+| **Durability & breadth** (light) | Breadth of ownership across the codebase | Count of **distinct core areas** the engineer meaningfully touched (non-trivial PRs), min-max scaled. *(The faulty-self-revert penalty from earlier drafts is cut — reverts are sparse (~60 repo-wide) and noisy; YAGNI for a 0.1-weight dimension.)* |
 
 **Composite = 0.6 · Substance + 0.3 · ReviewLeverage + 0.1 · DurabilityBreadth.** Weights
 shown on the dashboard. **All scores are min-max scaled *within the analyzed cohort*** —
@@ -106,21 +106,32 @@ the "Can we validate the findings?" criterion.
 
 ### Substance aggregation — defeating the volume trap
 
-Per engineer: `substance_raw = Σ over areas [ √( Σ_{non-trivial PRs in area} sᵢ ) ]`, then
-**p95 winsorization** before min-max scaling.
-**What actually defeats volume is the per-PR multiplier, not the concavity:** each PR's
-`sᵢ = complexity × reach × critical_boost`, so an isolated, formulaic, low-complexity PR
-scores ~0 (low reach × low complexity) and trivial PRs score exactly 0 — 562 of them
-accumulate little. The concavity adds two honest properties *on top*: cross-area **breadth**
-is rewarded over single-area concentration, and additional PRs **within one area have
-diminishing returns** (√). We do **not** claim "few-but-deep always beats high-volume" (any
-sum can be out-summed by enough volume); we claim **trivial/isolated volume cannot win** and
-per-PR reach×substance dominates the ranking. The dashboard also shows raw context — **PR
-count, AI-assisted %, work-type mix, median per-PR substance** — so a "high volume, low
-substance" profile is *visible*, not hidden.
+Three mechanisms, applied in order, make volume unable to win (the plan review proved that
+concavity alone is too weak — `reach` is an *area* property, so even formulaic PRs in a busy
+area inherit high reach):
 
-> **Built-in correctness test:** if `Gilbert09` (562 automated single-area PRs) ranks in the
-> top 5, the metric is broken. Validate against this known case before shipping.
+1. **Convex complexity weighting drives shallow work to ~0.** Each PR's
+   `sᵢ = cw(complexity) × reach × critical_boost`, with `cw = {1:0, 2:1, 3:3, 4:6, 5:10}`.
+   A complexity-1 change contributes **nothing**, however central the file; complexity rises
+   steeply so genuine depth dominates. The LLM rates complexity from the **diff**, so a
+   formulaic 2–3-file fix reads as 1.
+2. **Substance counts only each engineer's top-30 PRs (by heuristic substance) — the exact set
+   the LLM deep-reads.** A hyper-prolific account's long tail (Gilbert09's other ~532 PRs)
+   feeds the PR-*count* context chip but **not** the score. Natural anti-volume cap: you're
+   scored on your 30 most substantial contributions, deeply analyzed — not raw output.
+3. **Concave aggregation** then rewards breadth and damps within-area volume:
+   `substance_raw = Σ over areas [ √( Σ_{counted PRs in area} sᵢ ) ]`, **p95-winsorized** before
+   min-max scaling.
+
+We do **not** claim "few-but-deep always beats high-volume" (any sum can be out-summed); we
+**guarantee formulaic / trivial / isolated volume cannot win** — `cw(1)=0`, reach down-weights
+isolated areas, and the top-30 cap bounds count. The dashboard shows **PR count, AI-assisted %,
+work-type mix, median per-PR substance** so a "high volume, low depth" profile is visible.
+
+> **Built-in correctness test:** if `Gilbert09` (562 formulaic single-area PRs) ranks in the
+> top 5, the metric is broken — validate before shipping. The unit guard models a prolific
+> engineer whose top-30 PRs are *non-trivial but formulaic* (complexity 1–2) vs a deep engineer
+> with ~6 complexity-5 PRs (a guard using *trivial* PRs would pass vacuously).
 
 ## Analysis pipeline (the funnel; decoupled, runs once offline)
 

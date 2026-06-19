@@ -141,6 +141,10 @@ REVIEWER_BOT_DENYLIST = {
     "copilot-pull-request-reviewer", "posthog-bot", "sourcery-ai[bot]",
     "graphite-app[bot]", "github-actions[bot]", "dependabot[bot]",
     "sentry-io[bot]", "codecov[bot]", "vercel[bot]",
+    # automation accounts whose review-author login exposes no is_bot flag and
+    # doesn't match the suffix rules (verified leaking into the candidate set)
+    "greptile-apps", "github-actions", "veria-ai", "chatgpt-codex-connector",
+    "stamphog",
 }
 
 
@@ -148,4 +152,5 @@ def is_bot_login(login: str) -> bool:
     l = (login or "").lower()
     if l in {x.lower() for x in REVIEWER_BOT_DENYLIST}:
         return True
-    return l.endswith("[bot]") or l.endswith("-bot") or l.endswith("-app") or l.startswith("app/")
+    return (l.endswith("[bot]") or l.endswith("-bot") or l.endswith("-app")
+            or l.endswith("-apps") or l.startswith("app/"))

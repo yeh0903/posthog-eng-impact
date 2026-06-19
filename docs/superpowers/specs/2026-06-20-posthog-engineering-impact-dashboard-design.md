@@ -120,8 +120,11 @@ area inherit high reach):
    feeds the PR-*count* context chip but **not** the score. Natural anti-volume cap: you're
    scored on your 30 most substantial contributions, deeply analyzed — not raw output.
 3. **Concave aggregation** then rewards breadth and damps within-area volume:
-   `substance_raw = Σ over areas [ √( Σ_{counted PRs in area} sᵢ ) ]`, **p95-winsorized** before
-   min-max scaling.
+   `substance_raw = Σ over areas [ √( Σ_{counted PRs in area} sᵢ ) ]`, then min-max scaled.
+   *(The implementation review showed p95-winsorization clamped the legitimate cohort
+   maximum — it demoted the true #1 — so it was removed; mechanisms 1–3 above already
+   neutralize volume. The composite is the weighted sum ×100, so the dashboard's breakdown
+   bar decomposes the score exactly.)*
 
 We do **not** claim "few-but-deep always beats high-volume" (any sum can be out-summed); we
 **guarantee formulaic / trivial / isolated volume cannot win** — `cw(1)=0`, reach down-weights

@@ -38,8 +38,10 @@ area over the window (co-touch centrality). The shared core scores high (`fronte
 authors, `posthog/api` 103, `posthog/temporal` 82); isolated single-team work scores low.
 Generated/lock/CI/snapshot files are excluded.
 
-Scores are min-max scaled **within the analyzed cohort** (100 = highest among analyzed) and
-every claim links to the PRs, so a leader can validate any ranking in one click.
+Each dimension is min-max scaled **within the analyzed cohort** (1.0 = best-in-cohort on
+that dimension); the composite is their weighted sum ×100, and the on-page breakdown bar
+**decomposes the score exactly**. Every claim links to the PRs, so a leader can validate any
+ranking in one click.
 
 ### What we deliberately do **not** claim
 GitHub has no production-outcome data (incidents, usage, revenue), and PostHog's PR labels
@@ -50,13 +52,13 @@ GitHub has no production-outcome data (incidents, usage, revenue), and PostHog's
 
 | # | Engineer | What they shipped |
 |---|---|---|
-| 1 | **benjackwhite** | Drove the Agent Platform from scaffold to prod-readiness + infra reaching 100+ engineers (Kafka routing, CDP Valkey dual-write, ClickHouse metrics). |
-| 2 | **rnegron** | Built the `engineering_analytics` product end-to-end (curated warehouse read layer, typed MCP tools, CI analytics scene). |
-| 3 | **haacked** | Hardened the feature-flags serving path (lazy per-token auth cache, cohort hypercache preload) — **2% AI-assisted**, mostly hand-written. |
-| 4 | **aspicer** | Deep HogQL query-engine work (rebuilt the ClickHouse funnel UDF, re-architected predicate pushdown) — **just 38 PRs, ranked #4**: depth over volume. |
-| 5 | **ablaszkiewicz** | Error-tracking V3 query rewrite (denormalized ClickHouse table, optimized HogQL joins). |
+| 1 | **aspicer** | Deep HogQL query-engine work — rebuilt the ClickHouse funnel UDF on a RowBinary codec, re-architected events predicate pushdown, serializable lazy joins. **Just 38 PRs, ranked #1: depth over volume.** |
+| 2 | **rnegron** | Built the `engineering_analytics` product end-to-end (per-team curated warehouse read layer, typed MCP tools, CI analytics scene). |
+| 3 | **benjackwhite** | Drove the Agent Platform to prod-readiness + core ingestion infra (Kafka cluster routing, CDP Valkey dual-write, ClickHouse metrics). |
+| 4 | **haacked** | Hardened the feature-flags auth/caching path (lazy per-token Redis cache, cohort hypercache preload) — **2% AI-assisted**, mostly hand-written. |
+| 5 | **robbie-c** | Built the native Rust HogQL parser to C++ parity + query-engine wins (lazy-join pushdown, query-time GeoIP fallback during the MaxMind incident). |
 
-`aspicer` (#4, 38 PRs) over `Gilbert09` (#27, 562 PRs) is the thesis working.
+`aspicer` (#1, 38 PRs) ranks above `Gilbert09` (#29, 562 PRs) — the thesis working.
 
 ## How it's built (decoupled pipeline → static site)
 

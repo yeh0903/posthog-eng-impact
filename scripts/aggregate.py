@@ -100,7 +100,9 @@ def build_dashboard():
                 wt, summary, classified = r["work_type"], r["title"], False
                 prs_fallback += 1
             primary = max(r["areas"], key=lambda a: centrality.get(a, 0)) if r["areas"] else ""
-            s = per_pr_substance(complexity, r["reach"], r["critical_boost"])
+            # classified PRs use the convex LLM-complexity weight; the rare fallback PR uses
+            # the linear heuristic substance (avoids cw(size_proxy=1)=0 zeroing real work)
+            s = per_pr_substance(complexity, r["reach"], r["critical_boost"]) if classified else r["heuristic_substance"]
             scored.append({**r, "complexity": complexity, "work_type": wt, "summary": summary,
                            "classified": classified, "area": primary,
                            "reach_authors": centrality.get(primary, 0),
@@ -115,8 +117,20 @@ def build_dashboard():
             "median_pr_substance": round(statistics.median(s_vals), 2) if s_vals else 0.0,
         }
 
+    # candidates who only review (no authored candidate PRs) still get ranked
+    for lg in candidates:
+        if lg in eng:
+            continue
+        st = stats[lg]
+        eng[lg] = {"login": lg, "substance_raw": 0.0, "review_credit": st["review_credit"],
+                   "distinct_core_areas": st["distinct_core_areas"], "scored": [],
+                   "stats": st, "median_pr_substance": 0.0}
+
     logins = list(eng)
-    sub_w = winsorize([eng[l]["substance_raw"] for l in logins])
+    # NO winsorize on substance: the anti-volume job is already done by cw(1)=0 + measured
+    # reach + the top-30-PR cap + concave aggregation. Winsorizing here would clamp the
+    # legitimate cohort maximum (it demoted the true #1), so we min-max the raw values.
+    sub_w = [eng[l]["substance_raw"] for l in logins]
     sub_n = dict(zip(logins, minmax(sub_w)))
     rev_n = dict(zip(logins, minmax([eng[l]["review_credit"] for l in logins])))
     dur_n = dict(zip(logins, minmax([float(eng[l]["distinct_core_areas"]) for l in logins])))
@@ -128,9 +142,10 @@ def build_dashboard():
         eng[l]["composite_raw"] = composite(sub_n[l], rev_n[l], dur_n[l])
 
     ranked = sorted(logins, key=lambda l: -eng[l]["composite_raw"])
-    max_c = eng[ranked[0]]["composite_raw"] if ranked else 1.0
     for l in ranked:
-        eng[l]["composite"] = round(eng[l]["composite_raw"] / max_c * 100) if max_c else 0
+        # composite = weighted sum of the three [0,1] dimensions, x100 — so the displayed
+        # breakdown bar decomposes the score EXACTLY, with no rescaling fudge factor
+        eng[l]["composite"] = round(100 * eng[l]["composite_raw"])
 
     # built-in correctness guard
     gilbert_rank = ranked.index("Gilbert09") + 1 if "Gilbert09" in ranked else None
@@ -172,7 +187,7 @@ def build_dashboard():
         "reviews_truncated_prs": fmeta["reviews_truncated_prs"],
         "ai_assisted_pct_repo": fmeta["ai_assisted_pct_repo"],
         "weights": {"substance": WEIGHTS[0], "review_leverage": WEIGHTS[1], "durability_breadth": WEIGHTS[2]},
-        "scoring_note": "min-max scaled within the analyzed candidate cohort; 100 = highest among analyzed, not an absolute score",
+        "scoring_note": "0-100 = weighted sum of three dimensions, each min-max scaled within the analyzed cohort (1.0 = best-in-cohort on that dimension); the score breakdown decomposes it exactly",
         "central_areas": fmeta["central_areas"][:8],
         "generated_at": "2026-06-20",
     }

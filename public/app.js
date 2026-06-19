@@ -2,41 +2,76 @@
 
 const fmt = (n) => (n == null ? "—" : n.toLocaleString("en-US"));
 const pct = (x) => Math.round((x || 0) * 100);
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+// element with INNER HTML (only for trusted/escaped markup)
 const el = (tag, cls, html) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   if (html != null) e.innerHTML = html;
   return e;
 };
+// element with TEXT content (safe for any data-derived string)
+const textEl = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+};
 
 const WEIGHTS = { substance: 0.6, review_leverage: 0.3, durability_breadth: 0.1 };
 const DIM_META = [
-  ["substance", "Substance", "seg-substance", "--substance"],
+  ["substance", "Shipped substance", "seg-substance", "--substance"],
   ["review_leverage", "Review leverage", "seg-review", "--review"],
   ["durability_breadth", "Durability & breadth", "seg-durability", "--durability"],
 ];
+
+// only https://github.com/... links are allowed as evidence hrefs
+function safeGithubUrl(raw) {
+  try {
+    const u = new URL(String(raw));
+    if (u.protocol === "https:" && u.hostname === "github.com") return u.href;
+  } catch (e) { /* invalid */ }
+  return null;
+}
+
+// round contributions to integers that sum to round(total)
+function largestRemainder(vals) {
+  const total = Math.round(vals.reduce((a, b) => a + b, 0));
+  const floors = vals.map(Math.floor);
+  let rem = total - floors.reduce((a, b) => a + b, 0);
+  const order = vals.map((v, i) => [v - Math.floor(v), i]).sort((a, b) => b[0] - a[0]);
+  const out = floors.slice();
+  for (let j = 0; j < rem && order.length; j++) out[order[j % order.length][1]] += 1;
+  return out;
+}
+
+function showError(e) {
+  document.getElementById("leaderboard").innerHTML =
+    '<li class="row"><div class="row-head" style="padding:16px">Could not render the dashboard. See console for details.</div></li>';
+  if (e) console.error(e);
+}
 
 async function main() {
   let data;
   try {
     const res = await fetch("./dashboard.json", { cache: "no-store" });
     data = await res.json();
-  } catch (e) {
-    document.getElementById("leaderboard").innerHTML =
-      '<li class="row"><div class="row-head">Failed to load dashboard.json</div></li>';
-    return;
-  }
-  renderHeader(data.meta);
-  renderBoard(data.engineers || []);
-  renderFooter(data.meta);
-  wireMethodology();
+  } catch (e) { return showError(e); }
+  try {
+    renderHeader(data.meta);
+    renderBoard(data.engineers || []);
+    renderFooter(data.meta);
+    wireMethodology(data.meta);
+  } catch (e) { showError(e); }
 }
 
 function renderHeader(m) {
   document.getElementById("window-label").textContent =
     `Last ${m.window_days} days · ${m.window_start} → ${m.window_end}`;
-
-  const stat = document.getElementById("statline");
   const parts = [
     `<b>${fmt(m.total_prs_analyzed)}</b> merged PRs analyzed`,
     `<b>${fmt(m.human_prs)}</b> human-authored`,
@@ -44,40 +79,39 @@ function renderHeader(m) {
     `<b>${fmt(m.candidates_llm_classified)}</b> finalists deep-analyzed`,
     `<b>${fmt(m.prs_llm_classified)}</b> PRs LLM-read`,
   ];
-  stat.innerHTML = parts.join('<span class="dot">·</span>');
-
-  const aiPct = pct(m.ai_assisted_pct_repo);
+  document.getElementById("statline").innerHTML = parts.join('<span class="dot">·</span>');
   document.getElementById("ai-banner").innerHTML =
-    `⚡ <b>AI-assisted authorship is the norm at PostHog</b> — ~${aiPct}% of PRs carry agent ` +
+    `⚡ <b>AI-assisted authorship is the norm at PostHog</b> — ~${pct(m.ai_assisted_pct_repo)}% of PRs carry agent ` +
     `signatures. That's exactly why a "most PRs/commits" ranking is meaningless here, and why ` +
     `we rank by <b>measured reach × substance</b> instead of volume.`;
 }
 
 function methodologyHTML(m) {
   const ca = (m.central_areas || [])
-    .map((a) => `<code>${a.area}</code> (${a.distinct_authors})`).join(", ");
+    .map((a) => `<code>${escapeHtml(a.area)}</code> (${a.distinct_authors})`).join(", ");
   return `
     <h3>How the impact score is computed</h3>
-    <p class="formula">Composite = 0.6 · Substance + 0.3 · Review leverage + 0.1 · Durability/breadth</p>
+    <p class="formula">Composite = 0.6 · Substance + 0.3 · Review leverage + 0.1 · Durability/breadth (each scaled 0–1 within the analyzed cohort, ×100)</p>
     <ul>
-      <li><b>Substance</b> — for each PR, an LLM <i>reads the actual diff</i> and rates complexity (1–5).
-          That's multiplied by <b>reach</b> and a critical-path boost, then aggregated concavely
-          (breadth across areas rewarded; within-area volume gets diminishing returns). Trivial /
-          generated / stacked one-line PRs score ~0, so high volume alone earns little.</li>
-      <li><b>Reach is measured, not guessed</b> — the number of <i>distinct engineers</i> who touch a
-          code area over the window. Shared core (${ca}) scores high; isolated single-team work scores low.
+      <li><b>Shipped substance</b> — for each PR an LLM <i>reads the actual diff</i> and rates complexity 1–5
+          on a convex scale (a complexity-1 / formulaic change scores ~0). That's multiplied by <b>reach</b>
+          and a critical-path boost, counted over each engineer's top-30 PRs, and aggregated concavely
+          (breadth across areas rewarded; within-area volume gets diminishing returns).</li>
+      <li><b>Reach is measured, not guessed</b> — the number of <i>distinct engineers</i> who touch a code
+          area over the window. Shared core (${ca}) scores high; isolated single-team work scores low.
           Generated/lock/CI/snapshot files are excluded.</li>
       <li><b>Review leverage</b> — substantive reviews on others' non-trivial PRs (changes-requested &gt;
-          comment &gt; bare approve), weighted by the reach of the reviewed PR. A PR's review value is
-          split across its reviewers, so it can't be multiplied across a crowd.</li>
-      <li><b>Durability &amp; breadth</b> — distinct core areas owned, minus a small penalty for faulty self-reverts.</li>
-      <li><b>Scores are relative within the analyzed cohort</b> — <i>${m.scoring_note || "100 = highest among analyzed"}</i>.</li>
+          comment &gt; approve), weighted by the reach of the reviewed PR; a PR's value is split across its
+          reviewers. Bots and self-reviews excluded.</li>
+      <li><b>Durability &amp; breadth</b> — distinct core areas the engineer meaningfully touched.</li>
+      <li><b>Scores are relative within the analyzed cohort</b> — ${escapeHtml(m.scoring_note || "")}. The
+          breakdown bar below each engineer decomposes the score exactly.</li>
       <li><b>What we do <u>not</u> claim</b> — GitHub has no production-outcome data (incidents, usage, revenue),
-          and PR labels/issue-links are unused at PostHog, so we don't claim to measure business outcome. We measure
-          <i>doing high-leverage engineering work</i>, and every score links to the PRs so you can verify it.</li>
-      <li><b>How finalists are chosen</b> — a generous union (top by substance ∪ top reviewers ∪ anyone with a
-          critical-path / high-reach PR ∪ anyone with a top-decile single PR) so a "few-but-deep" engineer is never
-          cut before the LLM reads them. ${fmt(m.candidates_llm_classified)} of ${fmt(m.total_engineers)} engineers reached deep analysis.</li>
+          and PR labels/issue-links are unused at PostHog, so we don't claim to measure business outcome. We
+          measure <i>doing high-leverage engineering work</i>, and every score links to the PRs so you can verify it.</li>
+      <li><b>Finalist selection</b> — a generous union (top substance ∪ top reviewers ∪ critical-path / high-reach
+          authors ∪ anyone with a top-decile single PR), so a "few-but-deep" engineer is never cut before the LLM
+          reads them. ${fmt(m.candidates_llm_classified)} of ${fmt(m.total_engineers)} engineers reached deep analysis.</li>
     </ul>`;
 }
 
@@ -91,22 +125,21 @@ function rowFor(eng) {
   const li = el("li", "row");
   li.setAttribute("open-state", "0");
 
-  // ---- collapsed head ----
   const head = el("button", "row-head");
   head.setAttribute("aria-expanded", "false");
-
   const composite = Math.round(eng.composite || 0);
+
   head.appendChild(el("div", "rank", `${eng.rank}`));
 
   const img = el("img", "avatar");
-  img.src = eng.avatar_url || "https://github.com/github.png";
+  img.src = safeGithubUrl(eng.avatar_url) || `https://github.com/${encodeURIComponent(eng.login)}.png`;
   img.alt = "";
   img.loading = "lazy";
   head.appendChild(img);
 
   const who = el("div", "who");
-  who.appendChild(el("div", "login", eng.login));
-  who.appendChild(el("div", "narrative", eng.narrative || ""));
+  who.appendChild(textEl("div", "login", eng.login));
+  who.appendChild(textEl("div", "narrative", eng.narrative || ""));
   head.appendChild(who);
 
   const scoreWrap = el("div", "score-wrap");
@@ -118,9 +151,7 @@ function rowFor(eng) {
 
   head.appendChild(el("div", "chev", "▸"));
   li.appendChild(head);
-
-  // ---- expanded detail ----
-  li.appendChild(detailFor(eng, composite));
+  li.appendChild(detailFor(eng));
 
   head.addEventListener("click", () => {
     const open = li.getAttribute("open-state") === "1";
@@ -130,33 +161,29 @@ function rowFor(eng) {
   return li;
 }
 
-function detailFor(eng, composite) {
+function detailFor(eng) {
   const detail = el("div", "detail");
   const grid = el("div", "detail-grid");
-
-  // left: dimension breakdown + chips
-  const left = el("div");
-  left.appendChild(el("div", "breakdown-title", "Score breakdown (weighted contributions)"));
-
   const dims = eng.dimensions || {};
-  const raw = DIM_META.reduce((s, [k]) => s + WEIGHTS[k] * (dims[k] || 0), 0);
-  const factor = raw > 0 ? composite / raw : 0; // make segments sum to the displayed composite
+
+  // weighted contributions (each dim ∈[0,1]) × 100 — these sum EXACTLY to the composite
+  const exact = DIM_META.map(([k]) => WEIGHTS[k] * (dims[k] || 0) * 100);
+  const rounded = largestRemainder(exact);
+
+  const left = el("div");
+  left.appendChild(el("div", "breakdown-title", "Score breakdown (these add up to the score)"));
   const stack = el("div", "stack");
-  DIM_META.forEach(([k, , segCls]) => {
-    const contrib = WEIGHTS[k] * (dims[k] || 0) * factor;
+  DIM_META.forEach(([, , segCls], i) => {
     const seg = el("span", segCls);
-    seg.style.width = `${contrib}%`;
+    seg.style.width = `${exact[i]}%`;        // bar fills to the composite, decomposed
     stack.appendChild(seg);
   });
   left.appendChild(stack);
 
   const legend = el("div", "legend");
-  DIM_META.forEach(([k, label, , cssVar]) => {
-    const contrib = Math.round(WEIGHTS[k] * (dims[k] || 0) * factor);
-    legend.appendChild(
-      el("span", null,
-        `<i style="background:var(${cssVar})"></i>${label} <b>${contrib}</b>`)
-    );
+  DIM_META.forEach(([, label, , cssVar], i) => {
+    legend.appendChild(el("span", null,
+      `<i style="background:var(${cssVar})"></i>${escapeHtml(label)} <b>${rounded[i]}</b>`));
   });
   left.appendChild(legend);
 
@@ -164,20 +191,20 @@ function detailFor(eng, composite) {
   const s = eng.stats || {};
   const mix = Object.entries(s.work_type_mix || {})
     .sort((a, b) => b[1] - a[1]).slice(0, 3)
-    .map(([k, v]) => `${k} ${v}`).join(" · ");
+    .map(([k, v]) => `${escapeHtml(k)} ${v}`).join(" · ");
   const chips = el("div", "chips");
   const chip = (h) => chips.appendChild(el("span", "chip", h));
   chip(`<b>${fmt(s.prs_merged)}</b> PRs merged`);
   chip(`<b>${fmt(s.non_trivial_prs)}</b> non-trivial`);
   chip(`<b>${fmt(s.reviews_given)}</b> reviews given`);
   chip(`<b>${pct(s.ai_assisted_pct)}%</b> AI-assisted`);
-  if (s.median_pr_substance != null) chip(`median substance <b>${s.median_pr_substance}</b>`);
+  if (s.median_pr_substance != null) chip(`median substance <b>${escapeHtml(s.median_pr_substance)}</b>`);
   if (mix) chip(mix);
-  if ((s.core_areas || []).length) chip(`areas: <b>${s.core_areas.join(", ")}</b>`);
+  if ((s.core_areas || []).length) chip(`areas: <b>${escapeHtml(s.core_areas.join(", "))}</b>`);
   left.appendChild(chips);
   grid.appendChild(left);
 
-  // right: evidence PRs
+  // evidence
   const right = el("div");
   right.appendChild(el("div", "evidence-title", "Evidence — representative PRs (click to verify)"));
   const ul = el("ul", "evidence");
@@ -185,10 +212,13 @@ function detailFor(eng, composite) {
     const li = el("li", "ev");
     const tags =
       (ev.critical ? '<span class="tag tag-crit">critical path</span>' : "") +
-      (ev.reach ? `<span class="tag tag-reach">reach ${ev.reach}</span>` : "");
-    li.innerHTML =
-      `${tags}<a href="${ev.url}" target="_blank" rel="noopener">#${ev.pr} ${escapeHtml(ev.title || "")}</a>` +
-      `<div class="ev-sum">${escapeHtml(ev.summary || "")}</div>`;
+      (ev.reach ? `<span class="tag tag-reach">reach ${escapeHtml(ev.reach)}</span>` : "");
+    const url = safeGithubUrl(ev.url);
+    const titleText = `#${ev.pr} ${ev.title || ""}`;
+    const link = url
+      ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(titleText)}</a>`
+      : `<span>${escapeHtml(titleText)}</span>`;
+    li.innerHTML = `${tags}${link}<div class="ev-sum">${escapeHtml(ev.summary || "")}</div>`;
     ul.appendChild(li);
   });
   right.appendChild(ul);
@@ -200,36 +230,25 @@ function detailFor(eng, composite) {
 
 function renderFooter(m) {
   const f = document.getElementById("footer");
-  let html =
-    `Data: all <code>${m.total_prs_analyzed?.toLocaleString?.() || m.total_prs_analyzed}</code> PRs merged to ` +
-    `<code>${m.repo}</code> in the window (verified against GitHub's authoritative count). ` +
-    `Bots excluded. Generated 2026-06-20.`;
-  if (m.is_stub) {
-    f.innerHTML = `<div class="stub-flag">⚠️ STUB DATA — placeholder numbers for layout verification; real analysis pending.</div>` + html;
-  } else {
-    f.innerHTML = html;
-  }
-  // store meta for methodology panel
-  f.dataset.ready = "1";
+  const html =
+    `Data: all <code>${fmt(m.total_prs_analyzed)}</code> PRs merged to ` +
+    `<code>${escapeHtml(m.repo)}</code> in the window (verified against GitHub's authoritative count). ` +
+    `Bots excluded. Generated ${escapeHtml(m.generated_at)}.`;
+  f.innerHTML = m.is_stub
+    ? `<div class="stub-flag">⚠️ STUB DATA — placeholder numbers for layout verification.</div>` + html
+    : html;
 }
 
-function wireMethodology() {
+function wireMethodology(meta) {
   const btn = document.getElementById("how-btn");
   const panel = document.getElementById("methodology");
-  fetch("./dashboard.json", { cache: "no-store" })
-    .then((r) => r.json())
-    .then((d) => { panel.innerHTML = methodologyHTML(d.meta); });
+  panel.innerHTML = methodologyHTML(meta);
   btn.addEventListener("click", () => {
     const open = !panel.hidden;
     panel.hidden = open;
     btn.setAttribute("aria-expanded", open ? "false" : "true");
     btn.textContent = open ? "How this is computed ▸" : "How this is computed ▾";
   });
-}
-
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 main();

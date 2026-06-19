@@ -78,3 +78,10 @@ def test_is_bot_login():
     assert is_bot_login("copilot-pull-request-reviewer")
     assert is_bot_login("posthog-bot")
     assert not is_bot_login("fuziontech")
+
+
+def test_is_bot_login_catches_unflagged_automation():
+    # review finding: these leaked into the candidate set (no [bot] suffix / is_bot flag)
+    for bot in ["greptile-apps", "github-actions", "veria-ai", "chatgpt-codex-connector", "stamphog"]:
+        assert is_bot_login(bot), bot
+    assert not is_bot_login("benjackwhite")  # real engineer not caught

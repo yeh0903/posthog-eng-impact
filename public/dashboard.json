@@ -7,78 +7,365 @@
     "total_prs_analyzed": 8976,
     "human_prs": 8318,
     "bot_prs": 658,
-    "total_engineers": 312,
-    "candidates_llm_classified": 27,
-    "prs_llm_classified": 0,
-    "prs_heuristic_fallback": 0,
+    "total_engineers": 203,
+    "candidates_llm_classified": 35,
+    "prs_llm_classified": 876,
+    "prs_heuristic_fallback": 1,
     "files_truncated_prs": 51,
     "reviews_truncated_prs": 1,
-    "ai_assisted_pct_repo": 0.0,
-    "weights": { "substance": 0.6, "review_leverage": 0.3, "durability_breadth": 0.1 },
-    "scoring_note": "min-max scaled within analyzed cohort; 100 = highest among analyzed, not an absolute score",
+    "ai_assisted_pct_repo": 0.6419,
+    "weights": {
+      "substance": 0.6,
+      "review_leverage": 0.3,
+      "durability_breadth": 0.1
+    },
+    "scoring_note": "min-max scaled within the analyzed candidate cohort; 100 = highest among analyzed, not an absolute score",
     "central_areas": [
-      { "area": "frontend/src", "distinct_authors": 44 },
-      { "area": "services/mcp", "distinct_authors": 30 },
-      { "area": "posthog/temporal", "distinct_authors": 16 }
+      {
+        "area": "frontend/src",
+        "distinct_authors": 139
+      },
+      {
+        "area": "services/mcp",
+        "distinct_authors": 108
+      },
+      {
+        "area": "posthog/api",
+        "distinct_authors": 103
+      },
+      {
+        "area": "posthog/temporal",
+        "distinct_authors": 82
+      },
+      {
+        "area": "posthog/models",
+        "distinct_authors": 81
+      },
+      {
+        "area": "posthog/settings",
+        "distinct_authors": 67
+      },
+      {
+        "area": "posthog/tasks",
+        "distinct_authors": 57
+      },
+      {
+        "area": "posthog/management",
+        "distinct_authors": 56
+      }
     ],
-    "generated_at": "STUB",
-    "is_stub": true
+    "generated_at": "2026-06-20"
   },
   "engineers": [
     {
-      "rank": 1, "login": "stub-engineer-one", "avatar_url": "https://github.com/github.png",
+      "rank": 1,
+      "login": "benjackwhite",
+      "avatar_url": "https://github.com/benjackwhite.png",
       "composite": 100,
-      "narrative": "STUB — narrative goes here. Re-architected a core subsystem touching many teams; high reach, high complexity.",
-      "dimensions": { "substance": 1.0, "review_leverage": 0.7, "durability_breadth": 0.8 },
-      "stats": { "prs_merged": 84, "non_trivial_prs": 61, "reviews_given": 120, "ai_assisted_pct": 0.55,
-                 "core_areas": ["posthog/hogql", "posthog/api"], "work_type_mix": {"feature": 30, "bugfix": 18, "refactor": 13}, "median_pr_substance": 6.2 },
+      "narrative": "Drove PostHog's Agent Platform from scaffold to prod-readiness (Django product, Modal sandboxes, Redis bus, approvals, AI gateway) while landing infra reaching 100+ engineers: env-driven Kafka cluster routing, CDP Valkey dual-write, and ClickHouse metrics ingestion.",
+      "dimensions": {
+        "substance": 1.0,
+        "review_leverage": 0.0954,
+        "durability_breadth": 0.4465
+      },
+      "stats": {
+        "prs_merged": 70,
+        "non_trivial_prs": 67,
+        "reviews_given": 40,
+        "ai_assisted_pct": 0.59,
+        "core_areas": [
+          "frontend/src",
+          "services/mcp",
+          "posthog/api",
+          "posthog/temporal"
+        ],
+        "work_type_mix": {
+          "feat": 38,
+          "fix": 14,
+          "chore": 16,
+          "refactor": 1,
+          "docs": 1
+        },
+        "median_pr_substance": 11.8
+      },
       "evidence": [
-        { "pr": 1, "url": "https://github.com/PostHog/posthog/pull/1", "title": "STUB evidence PR", "summary": "Did a significant thing.", "work_type": "feature", "reach": 44, "critical": true },
-        { "pr": 2, "url": "https://github.com/PostHog/posthog/pull/2", "title": "STUB evidence PR 2", "summary": "Fixed a critical thing.", "work_type": "bugfix", "reach": 16, "critical": false }
+        {
+          "pr": 63988,
+          "url": "https://github.com/PostHog/posthog/pull/63988",
+          "title": "feat(agent-platform): core Agent Platform feature branch (all agent platform services)",
+          "summary": "Consolidated all agent-platform services into the canonical long-lived feature branch; multi-service scaffolding.",
+          "work_type": "feature",
+          "reach": 139,
+          "critical": false
+        },
+        {
+          "pr": 54702,
+          "url": "https://github.com/PostHog/posthog/pull/54702",
+          "title": "feat: Setup kafka client routing via env vars",
+          "summary": "Added env-driven per-topic Kafka cluster routing with router classes and a semgrep guard.",
+          "work_type": "infra",
+          "reach": 103,
+          "critical": true
+        },
+        {
+          "pr": 57674,
+          "url": "https://github.com/PostHog/posthog/pull/57674",
+          "title": "feat: Setup dual writing for cdp services to valkey",
+          "summary": "Added shadow Valkey dual-write/read pools mirroring CDP services for load-testing new infra.",
+          "work_type": "feature",
+          "reach": 50,
+          "critical": false
+        }
       ]
     },
     {
-      "rank": 2, "login": "stub-engineer-two", "avatar_url": "https://github.com/github.png",
-      "composite": 78,
-      "narrative": "STUB — broad reviewer and cross-area contributor.",
-      "dimensions": { "substance": 0.6, "review_leverage": 1.0, "durability_breadth": 0.6 },
-      "stats": { "prs_merged": 52, "non_trivial_prs": 40, "reviews_given": 210, "ai_assisted_pct": 0.61,
-                 "core_areas": ["frontend/src"], "work_type_mix": {"feature": 20, "bugfix": 15, "refactor": 5}, "median_pr_substance": 4.8 },
+      "rank": 2,
+      "login": "rnegron",
+      "avatar_url": "https://github.com/rnegron.png",
+      "composite": 95,
+      "narrative": "Built PostHog's engineering_analytics product end-to-end: a private curated warehouse read layer feeding typed MCP tools and a CI analytics UI scene, plus an ASGI device-auth fix and a hogli CLI lazy-load refactor. Deep, cross-cutting work reaching 100+ authors.",
+      "dimensions": {
+        "substance": 0.7348,
+        "review_leverage": 0.4894,
+        "durability_breadth": 0.5283
+      },
+      "stats": {
+        "prs_merged": 211,
+        "non_trivial_prs": 160,
+        "reviews_given": 200,
+        "ai_assisted_pct": 0.85,
+        "core_areas": [
+          "frontend/src",
+          "services/mcp",
+          "posthog/api",
+          "posthog/temporal"
+        ],
+        "work_type_mix": {
+          "chore": 96,
+          "refactor": 3,
+          "fix": 61,
+          "feat": 40,
+          "revert": 1,
+          "docs": 2,
+          "test": 7,
+          "perf": 1
+        },
+        "median_pr_substance": 9.89
+      },
       "evidence": [
-        { "pr": 3, "url": "https://github.com/PostHog/posthog/pull/3", "title": "STUB evidence", "summary": "Reviewed and unblocked.", "work_type": "feature", "reach": 44, "critical": false }
+        {
+          "pr": 61182,
+          "url": "https://github.com/PostHog/posthog/pull/61182",
+          "title": "feat(engineering_analytics): CI analytics scene",
+          "summary": "Shipped read-only CI analytics scene: routes, product config, PR/workflow-health views over backend queries.",
+          "work_type": "feature",
+          "reach": 139,
+          "critical": false
+        },
+        {
+          "pr": 60317,
+          "url": "https://github.com/PostHog/posthog/pull/60317",
+          "title": "feat(engineering_analytics): private read layer + typed endpoints",
+          "summary": "Added private read layer with curated queries, typed contracts, and scoped engineering_analytics endpoints for agents.",
+          "work_type": "feature",
+          "reach": 108,
+          "critical": false
+        },
+        {
+          "pr": 64421,
+          "url": "https://github.com/PostHog/posthog/pull/64421",
+          "title": "feat(engineering_analytics): cost/friction lens + warehouse-shape fix",
+          "summary": "Added CI cost/friction lens; fixed warehouse string/Nullable parsing that 500'd every endpoint on real data.",
+          "work_type": "feature",
+          "reach": 108,
+          "critical": false
+        }
       ]
     },
     {
-      "rank": 3, "login": "stub-engineer-three", "avatar_url": "https://github.com/github.png",
-      "composite": 64,
-      "narrative": "STUB — few but deep PRs in the query engine.",
-      "dimensions": { "substance": 0.8, "review_leverage": 0.3, "durability_breadth": 0.4 },
-      "stats": { "prs_merged": 14, "non_trivial_prs": 12, "reviews_given": 30, "ai_assisted_pct": 0.40,
-                 "core_areas": ["posthog/hogql"], "work_type_mix": {"feature": 8, "bugfix": 4}, "median_pr_substance": 7.9 },
+      "rank": 3,
+      "login": "haacked",
+      "avatar_url": "https://github.com/haacked.png",
+      "composite": 93,
+      "narrative": "Hardened PostHog's feature-flags serving path end-to-end: built a lazy per-token auth cache with signal-driven and periodic Redis invalidation, preloaded flag-referenced cohorts into the flags hypercache, and added per-team request/response logging plus encrypted-payload and instance-setting audit safeguards.",
+      "dimensions": {
+        "substance": 0.8475,
+        "review_leverage": 0.3278,
+        "durability_breadth": 0.1887
+      },
+      "stats": {
+        "prs_merged": 104,
+        "non_trivial_prs": 96,
+        "reviews_given": 107,
+        "ai_assisted_pct": 0.02,
+        "core_areas": [
+          "frontend/src",
+          "services/mcp",
+          "posthog/api",
+          "posthog/models"
+        ],
+        "work_type_mix": {
+          "chore": 29,
+          "feat": 27,
+          "fix": 39,
+          "revert": 1,
+          "refactor": 4,
+          "test": 3,
+          "perf": 1
+        },
+        "median_pr_substance": 8.77
+      },
       "evidence": [
-        { "pr": 4, "url": "https://github.com/PostHog/posthog/pull/4", "title": "STUB evidence", "summary": "Deep change.", "work_type": "feature", "reach": 6, "critical": true }
+        {
+          "pr": 60179,
+          "url": "https://github.com/PostHog/posthog/pull/60179",
+          "title": "feat(flags): add per-team request/response body logging",
+          "summary": "Added opt-in per-team /flags request/response body logging, polled ~60s by the Rust service.",
+          "work_type": "feature",
+          "reach": 139,
+          "critical": false
+        },
+        {
+          "pr": 51854,
+          "url": "https://github.com/PostHog/posthog/pull/51854",
+          "title": "feat(flags): implement lazy per-token auth cache with targeted invalidation",
+          "summary": "Built lazy per-token auth cache with signal-driven targeted Redis invalidation on token/user changes.",
+          "work_type": "feature",
+          "reach": 81,
+          "critical": false
+        },
+        {
+          "pr": 52023,
+          "url": "https://github.com/PostHog/posthog/pull/52023",
+          "title": "feat(flags): preload referenced cohorts in flags hypercache",
+          "summary": "Preloaded flag-referenced cohorts and transitive deps into flags hypercache via BFS, skipping recalc-only saves.",
+          "work_type": "feature",
+          "reach": 81,
+          "critical": false
+        }
       ]
     },
     {
-      "rank": 4, "login": "stub-engineer-four", "avatar_url": "https://github.com/github.png",
-      "composite": 51,
-      "narrative": "STUB — steady feature delivery across products.",
-      "dimensions": { "substance": 0.5, "review_leverage": 0.4, "durability_breadth": 0.9 },
-      "stats": { "prs_merged": 38, "non_trivial_prs": 25, "reviews_given": 60, "ai_assisted_pct": 0.70,
-                 "core_areas": ["products/llm_analytics", "frontend/src"], "work_type_mix": {"feature": 22, "bugfix": 10}, "median_pr_substance": 4.1 },
+      "rank": 4,
+      "login": "aspicer",
+      "avatar_url": "https://github.com/aspicer.png",
+      "composite": 92,
+      "narrative": "Drove deep HogQL query-engine work: rebuilt the ClickHouse funnel UDF on a RowBinary codec, re-architected events predicate pushdown, and made lazy joins serializable; also shipped the string-only materialized-column (dmat) slot pool with a Temporal backfill workflow.",
+      "dimensions": {
+        "substance": 1.0,
+        "review_leverage": 0.0,
+        "durability_breadth": 0.195
+      },
+      "stats": {
+        "prs_merged": 38,
+        "non_trivial_prs": 36,
+        "reviews_given": 15,
+        "ai_assisted_pct": 0.66,
+        "core_areas": [
+          "frontend/src",
+          "services/mcp",
+          "posthog/api",
+          "posthog/temporal"
+        ],
+        "work_type_mix": {
+          "fix": 12,
+          "feat": 14,
+          "revert": 1,
+          "chore": 8,
+          "refactor": 2,
+          "perf": 1
+        },
+        "median_pr_substance": 11.27
+      },
       "evidence": [
-        { "pr": 5, "url": "https://github.com/PostHog/posthog/pull/5", "title": "STUB evidence", "summary": "Shipped feature.", "work_type": "feature", "reach": 12, "critical": false }
+        {
+          "pr": 55564,
+          "url": "https://github.com/PostHog/posthog/pull/55564",
+          "title": "feat: funnel binary",
+          "summary": "Rewrote funnel ClickHouse UDF on RowBinary codec with chunking and trends/steps variant binaries.",
+          "work_type": "feature",
+          "reach": 53,
+          "critical": true
+        },
+        {
+          "pr": 62239,
+          "url": "https://github.com/PostHog/posthog/pull/62239",
+          "title": "refactor(hogql): redesign events predicate pushdown on the lowering architecture",
+          "summary": "Re-architected HogQL events predicate pushdown atop the lowering layer, simplifying generated cohort SQL.",
+          "work_type": "refactor",
+          "reach": 53,
+          "critical": true
+        },
+        {
+          "pr": 58251,
+          "url": "https://github.com/PostHog/posthog/pull/58251",
+          "title": "feat(dmat): part 2: batched backfill workflow",
+          "summary": "Added batched Temporal backfill workflow for materialized columns with slot activity logging.",
+          "work_type": "feature",
+          "reach": 103,
+          "critical": true
+        }
       ]
     },
     {
-      "rank": 5, "login": "stub-engineer-five", "avatar_url": "https://github.com/github.png",
-      "composite": 43,
-      "narrative": "STUB — infra and reliability work.",
-      "dimensions": { "substance": 0.45, "review_leverage": 0.35, "durability_breadth": 0.5 },
-      "stats": { "prs_merged": 29, "non_trivial_prs": 20, "reviews_given": 45, "ai_assisted_pct": 0.50,
-                 "core_areas": ["rust/capture"], "work_type_mix": {"fix": 12, "perf": 8}, "median_pr_substance": 5.0 },
+      "rank": 5,
+      "login": "ablaszkiewicz",
+      "avatar_url": "https://github.com/ablaszkiewicz.png",
+      "composite": 87,
+      "narrative": "Drove PostHog's error-tracking V3 query rewrite end-to-end: a denormalized ClickHouse fingerprint-issue-state table (Kafka MV), optimized HogQL joins/aggregations dropping Postgres joins, plus frontend schema and batched recommendation sweeps cutting query latency at scale.",
+      "dimensions": {
+        "substance": 0.8188,
+        "review_leverage": 0.2851,
+        "durability_breadth": 0.0692
+      },
+      "stats": {
+        "prs_merged": 74,
+        "non_trivial_prs": 74,
+        "reviews_given": 111,
+        "ai_assisted_pct": 0.35,
+        "core_areas": [
+          "frontend/src",
+          "services/mcp",
+          "posthog/api",
+          "posthog/temporal"
+        ],
+        "work_type_mix": {
+          "fix": 28,
+          "feat": 40,
+          "perf": 1,
+          "chore": 4,
+          "refactor": 1
+        },
+        "median_pr_substance": 12.53
+      },
       "evidence": [
-        { "pr": 6, "url": "https://github.com/PostHog/posthog/pull/6", "title": "STUB evidence", "summary": "Perf win.", "work_type": "perf", "reach": 8, "critical": false }
+        {
+          "pr": 55332,
+          "url": "https://github.com/PostHog/posthog/pull/55332",
+          "title": "feat: pending issue state updates",
+          "summary": "UNIONs client-side pending issue-state updates into the ClickHouse argMax subquery to mask Kafka-to-CH sync lag.",
+          "work_type": "feature",
+          "reach": 139,
+          "critical": true
+        },
+        {
+          "pr": 58785,
+          "url": "https://github.com/PostHog/posthog/pull/58785",
+          "title": "feat(error-tracking): optimize query v3",
+          "summary": "Optimizes V3 query with argMin/Max/sumForEach state aggregations and a new HogQL fingerprint-issue-state table join.",
+          "work_type": "perf",
+          "reach": 53,
+          "critical": true
+        },
+        {
+          "pr": 58874,
+          "url": "https://github.com/PostHog/posthog/pull/58874",
+          "title": "perf(error-tracking): apply remaining v3 issues-list optimizations",
+          "summary": "Rewrites issue-state join to group by cityHash64 fingerprint hash with direct toNullable argMax aggregation.",
+          "work_type": "perf",
+          "reach": 53,
+          "critical": true
+        }
       ]
     }
   ]

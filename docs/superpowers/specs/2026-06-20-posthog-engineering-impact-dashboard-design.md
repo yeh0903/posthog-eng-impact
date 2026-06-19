@@ -106,15 +106,18 @@ the "Can we validate the findings?" criterion.
 
 ### Substance aggregation — defeating the volume trap
 
-Per engineer, substance is **concave** so depth beats volume:
-`substance_raw = Σ over areas [ √( Σ_{non-trivial PRs in area} sᵢ ) ]`.
-Trivial PRs contribute ~0 (257 stacked one-liners ≈ 0); the inner per-area sum gets a √
-(diminishing returns within an area, so 562 formulaic single-area fixes accumulate little);
-reach already down-weights isolated work. A residual **p95 winsorization** then caps any
-single outlier before min-max scaling. **Property:** an engineer with 4 high-substance PRs
-is not overtaken by one with many medium PRs purely on volume. The dashboard also shows raw
-context — **PR count, AI-assisted %, work-type mix, median per-PR substance** — so a "high
-volume, low substance" profile is *visible*, not hidden.
+Per engineer: `substance_raw = Σ over areas [ √( Σ_{non-trivial PRs in area} sᵢ ) ]`, then
+**p95 winsorization** before min-max scaling.
+**What actually defeats volume is the per-PR multiplier, not the concavity:** each PR's
+`sᵢ = complexity × reach × critical_boost`, so an isolated, formulaic, low-complexity PR
+scores ~0 (low reach × low complexity) and trivial PRs score exactly 0 — 562 of them
+accumulate little. The concavity adds two honest properties *on top*: cross-area **breadth**
+is rewarded over single-area concentration, and additional PRs **within one area have
+diminishing returns** (√). We do **not** claim "few-but-deep always beats high-volume" (any
+sum can be out-summed by enough volume); we claim **trivial/isolated volume cannot win** and
+per-PR reach×substance dominates the ranking. The dashboard also shows raw context — **PR
+count, AI-assisted %, work-type mix, median per-PR substance** — so a "high volume, low
+substance" profile is *visible*, not hidden.
 
 > **Built-in correctness test:** if `Gilbert09` (562 automated single-area PRs) ranks in the
 > top 5, the metric is broken. Validate against this known case before shipping.

@@ -1,7 +1,6 @@
-# Large raw data (regenerable via scripts/fetch_prs.py)
-data/prs_raw.json
-data/windows/
-data/to_classify.json
+# Generated data artifacts (all regenerable via scripts/ + workflows/).
+# The published artifact lives at public/dashboard.json (committed).
+data/
 
 # Python
 __pycache__/

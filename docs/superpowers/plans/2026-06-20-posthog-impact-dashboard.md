@@ -238,8 +238,12 @@ def is_bot_login(login: str) -> bool:
 
 **Files:** Create `scripts/classify_prep.py`.
 
-- [ ] **Step 1:** For each candidate PR (from `data/candidates.json`), assemble a record:
-  `{number, title, body[:1500], labels, files[:40] paths, additions, deletions}`. Fetch a
+- [ ] **Step 1:** Load `data/prs_raw.json` and build a `{int(number) -> record}` index (each
+  record carries `title`, `body`, `labels`, `files`, `additions`, `deletions`). Load
+  `data/candidates.json` (candidate logins + their top-30 non-trivial PR numbers) and join its
+  PR numbers against that index. For each candidate PR, assemble a record:
+  `{number, title, body[:1500], labels, files[:40] paths, additions, deletions}` from the joined
+  `prs_raw` record (`number` is an int in `prs_raw.json`, so keying by int is safe). Fetch a
   **truncated diff**: `gh pr diff <n> --repo PostHog/posthog | head -c 6000` (cap per PR;
   skip on error). Write `data/to_classify.json` (list of records). Batch into groups of ~20.
 - [ ] **Step 2:** Run; inspect count (~600–900) and that diffs are populated for most.

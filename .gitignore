@@ -1,0 +1,17 @@
+# Large raw data (regenerable via scripts/fetch_prs.py)
+data/prs_raw.json
+data/windows/
+data/to_classify.json
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node / Vercel
+node_modules/
+.vercel/
+
+# Test/preview artifacts
+.playwright-mcp/
+*.png

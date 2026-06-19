@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "repo": "PostHog/posthog",
+    "window_days": 91,
+    "window_start": "2026-03-22",
+    "window_end": "2026-06-20",
+    "total_prs_analyzed": 8976,
+    "human_prs": 8318,
+    "bot_prs": 658,
+    "total_engineers": 312,
+    "candidates_llm_classified": 27,
+    "prs_llm_classified": 0,
+    "prs_heuristic_fallback": 0,
+    "files_truncated_prs": 51,
+    "reviews_truncated_prs": 1,
+    "ai_assisted_pct_repo": 0.0,
+    "weights": { "substance": 0.6, "review_leverage": 0.3, "durability_breadth": 0.1 },
+    "scoring_note": "min-max scaled within analyzed cohort; 100 = highest among analyzed, not an absolute score",
+    "central_areas": [
+      { "area": "frontend/src", "distinct_authors": 44 },
+      { "area": "services/mcp", "distinct_authors": 30 },
+      { "area": "posthog/temporal", "distinct_authors": 16 }
+    ],
+    "generated_at": "STUB",
+    "is_stub": true
+  },
+  "engineers": [
+    {
+      "rank": 1, "login": "stub-engineer-one", "avatar_url": "https://github.com/github.png",
+      "composite": 100,
+      "narrative": "STUB — narrative goes here. Re-architected a core subsystem touching many teams; high reach, high complexity.",
+      "dimensions": { "substance": 1.0, "review_leverage": 0.7, "durability_breadth": 0.8 },
+      "stats": { "prs_merged": 84, "non_trivial_prs": 61, "reviews_given": 120, "ai_assisted_pct": 0.55,
+                 "core_areas": ["posthog/hogql", "posthog/api"], "work_type_mix": {"feature": 30, "bugfix": 18, "refactor": 13}, "median_pr_substance": 6.2 },
+      "evidence": [
+        { "pr": 1, "url": "https://github.com/PostHog/posthog/pull/1", "title": "STUB evidence PR", "summary": "Did a significant thing.", "work_type": "feature", "reach": 44, "critical": true },
+        { "pr": 2, "url": "https://github.com/PostHog/posthog/pull/2", "title": "STUB evidence PR 2", "summary": "Fixed a critical thing.", "work_type": "bugfix", "reach": 16, "critical": false }
+      ]
+    },
+    {
+      "rank": 2, "login": "stub-engineer-two", "avatar_url": "https://github.com/github.png",
+      "composite": 78,
+      "narrative": "STUB — broad reviewer and cross-area contributor.",
+      "dimensions": { "substance": 0.6, "review_leverage": 1.0, "durability_breadth": 0.6 },
+      "stats": { "prs_merged": 52, "non_trivial_prs": 40, "reviews_given": 210, "ai_assisted_pct": 0.61,
+                 "core_areas": ["frontend/src"], "work_type_mix": {"feature": 20, "bugfix": 15, "refactor": 5}, "median_pr_substance": 4.8 },
+      "evidence": [
+        { "pr": 3, "url": "https://github.com/PostHog/posthog/pull/3", "title": "STUB evidence", "summary": "Reviewed and unblocked.", "work_type": "feature", "reach": 44, "critical": false }
+      ]
+    },
+    {
+      "rank": 3, "login": "stub-engineer-three", "avatar_url": "https://github.com/github.png",
+      "composite": 64,
+      "narrative": "STUB — few but deep PRs in the query engine.",
+      "dimensions": { "substance": 0.8, "review_leverage": 0.3, "durability_breadth": 0.4 },
+      "stats": { "prs_merged": 14, "non_trivial_prs": 12, "reviews_given": 30, "ai_assisted_pct": 0.40,
+                 "core_areas": ["posthog/hogql"], "work_type_mix": {"feature": 8, "bugfix": 4}, "median_pr_substance": 7.9 },
+      "evidence": [
+        { "pr": 4, "url": "https://github.com/PostHog/posthog/pull/4", "title": "STUB evidence", "summary": "Deep change.", "work_type": "feature", "reach": 6, "critical": true }
+      ]
+    },
+    {
+      "rank": 4, "login": "stub-engineer-four", "avatar_url": "https://github.com/github.png",
+      "composite": 51,
+      "narrative": "STUB — steady feature delivery across products.",
+      "dimensions": { "substance": 0.5, "review_leverage": 0.4, "durability_breadth": 0.9 },
+      "stats": { "prs_merged": 38, "non_trivial_prs": 25, "reviews_given": 60, "ai_assisted_pct": 0.70,
+                 "core_areas": ["products/llm_analytics", "frontend/src"], "work_type_mix": {"feature": 22, "bugfix": 10}, "median_pr_substance": 4.1 },
+      "evidence": [
+        { "pr": 5, "url": "https://github.com/PostHog/posthog/pull/5", "title": "STUB evidence", "summary": "Shipped feature.", "work_type": "feature", "reach": 12, "critical": false }
+      ]
+    },
+    {
+      "rank": 5, "login": "stub-engineer-five", "avatar_url": "https://github.com/github.png",
+      "composite": 43,
+      "narrative": "STUB — infra and reliability work.",
+      "dimensions": { "substance": 0.45, "review_leverage": 0.35, "durability_breadth": 0.5 },
+      "stats": { "prs_merged": 29, "non_trivial_prs": 20, "reviews_given": 45, "ai_assisted_pct": 0.50,
+                 "core_areas": ["rust/capture"], "work_type_mix": {"fix": 12, "perf": 8}, "median_pr_substance": 5.0 },
+      "evidence": [
+        { "pr": 6, "url": "https://github.com/PostHog/posthog/pull/6", "title": "STUB evidence", "summary": "Perf win.", "work_type": "perf", "reach": 8, "critical": false }
+      ]
+    }
+  ]
+}

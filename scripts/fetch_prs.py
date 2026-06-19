@@ -25,8 +25,14 @@ MAX_WORKERS = 8
 os.makedirs(WIN_DIR, exist_ok=True)
 
 
-def run_gh(date_query: str, retries: int = 4):
-    """Run gh pr list for a search date query, return list of PRs (raise on failure)."""
+def run_gh(date_query: str, retries: int = 3):
+    """Run gh pr list for a search date query.
+
+    Returns list of PRs on success, or None if the query keeps timing out
+    (504/502/timeout) so the caller can split it into a lighter sub-query.
+    Raises only on non-timeout hard failures.
+    """
+    import time
     cmd = [
         "gh", "pr", "list", "--repo", REPO, "--state", "merged",
         "--search", f"merged:{date_query} sort:created-asc",
@@ -42,29 +48,47 @@ def run_gh(date_query: str, retries: int = 4):
                 last_err = f"json error: {e}"
         else:
             last_err = p.stderr.strip()
-        # backoff on rate-limit / transient
-        import time
-        time.sleep(5 * (attempt + 1))
-    raise RuntimeError(f"gh failed for {date_query}: {last_err}")
+        timeout_like = any(s in last_err for s in ("504", "502", "Gateway")) or "timeout" in last_err.lower()
+        if attempt < retries - 1:
+            time.sleep(4 * (attempt + 1))
+            continue
+        if timeout_like:
+            return None  # signal: too heavy, split me
+        raise RuntimeError(f"gh failed for {date_query}: {last_err}")
+    return None
+
+
+def _floor_day(d: datetime) -> datetime:
+    return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
 
 
 def fetch_range(start: datetime, end: datetime, depth: int = 0):
-    """Fetch a [start, end] inclusive date range, splitting if the 1000 cap is hit."""
+    """Fetch a [start, end] inclusive date range, splitting on the 1000 cap OR timeouts."""
     q = f"{start.date()}..{end.date()}"
     prs = run_gh(q)
+
+    if prs is None:  # timeout -> split smaller
+        if start.date() != end.date():
+            mid = _floor_day(start + (end - start) / 2)
+            return fetch_range(start, mid, depth + 1) + fetch_range(mid + timedelta(days=1), end, depth + 1)
+        # single day timed out -> split into 6h quarters
+        out = []
+        for lo, hi in [("00:00:00", "05:59:59"), ("06:00:00", "11:59:59"),
+                       ("12:00:00", "17:59:59"), ("18:00:00", "23:59:59")]:
+            sub = run_gh(f"{start.date()}T{lo}..{start.date()}T{hi}")
+            if sub is None:
+                raise RuntimeError(f"timeout even at 6h granularity for {start.date()} {lo}..{hi}")
+            out += sub
+        return out
+
     if len(prs) >= 1000 and start.date() != end.date():
-        # truncated -> split in half by days
-        mid = start + (end - start) / 2
-        mid = datetime(mid.year, mid.month, mid.day, tzinfo=timezone.utc)
-        left = fetch_range(start, mid, depth + 1)
-        right = fetch_range(mid + timedelta(days=1), end, depth + 1)
-        return left + right
-    if len(prs) >= 1000:
-        # single day still capped -> split by 12h using time component
+        mid = _floor_day(start + (end - start) / 2)
+        return fetch_range(start, mid, depth + 1) + fetch_range(mid + timedelta(days=1), end, depth + 1)
+    if len(prs) >= 1000:  # single day still capped -> 12h split
         out = []
         for lo, hi in [("00:00:00", "11:59:59"), ("12:00:00", "23:59:59")]:
-            qt = f"{start.date()}T{lo}..{start.date()}T{hi}"
-            out += run_gh(qt)
+            sub = run_gh(f"{start.date()}T{lo}..{start.date()}T{hi}")
+            out += (sub or [])
         return out
     return prs
 
